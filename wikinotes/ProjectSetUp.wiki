@@ -1,0 +1,12 @@
+Back to index
+
+
+
+
+Gitignore:
+
+When jni folder is present, libs/armeabi/*.so is marked as ignored
+resource as its an output of the jni folder just as the
+obj folder is. Obviously when no jni folder present any
+libs/armeabi/*.so libs are not marked as ignored resources.
+

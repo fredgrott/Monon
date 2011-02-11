@@ -1,0 +1,20 @@
+# Uncomment what you need
+#
+# IDE bin folder
+# bin/
+# ant build system build folder
+# build/
+# Android SDK gen folder
+# gen/
+# Android Native C/C++ obj folder
+# obj/
+# local env properties of build
+# local.properties
+# Child AndroidTestProject stuff
+# AndroidTestProjectName/bin/
+# AndroidTestProjectName/build/
+# AndroidTestProjectName/gen/
+# AndroidTestProjectName/local.properties
+# for gradle
+# .gradle
+# .settings

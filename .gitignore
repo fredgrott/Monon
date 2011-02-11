@@ -1,4 +1,12 @@
 bin/
 build/
+gen/
 obj/
 local.properties
+MononTest/bin/
+MononTest/build/
+MononTest/gen/
+MononTest/local.properties
+.gradle
+.settings
+
