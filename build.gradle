@@ -1,0 +1,120 @@
+/**
+ *  Monon -A Gradle build-set for Android Application Developers
+ *  Apache License 2.0, see:
+ *  Copyright 2011
+ *
+ *  Libraries/Frameworks Used:
+ *    Java          MicroLog4Android
+ *                  RoboGuice and Guice-no-aop
+ *                  AspectJ-method tracing(Traceview tunrs off JIT on emulator
+ *                  thus we use asepctJ for debug tests only not in production)
+ *                  Robolectric-jvm testing
+ *                  Robotium and Android-Mock Dalvik VM testing
+ *
+ *    C++           Unittest++
+ *
+ *    Javascript    Coffescript JS
+ *                  UI JS-JQuery Mobile
+ *                  Jasmine-BDD Unit testing
+ *                  Selenium for testign
+ *
+ *    CSS           LessCSS
+ *
+ *    Note: Java can be tested Dalvik VM through AndroidTest Project or
+ *           JVM wise using Robolectric.
+ *
+ *           C++ is tested via Dalvik VM/AndroidTestProject by runing unit tests
+ *           in parent and grabbing results via java unit test class using JNI.
+ *
+ *           JS is unit tested using AndroidTestProject
+ *
+ *  Project Layout:
+ *
+ *    ParentAndroidJavaProject\
+ *                src
+ *                jvmtests
+ *                assets\
+ *                    css
+ *                    css-src
+ *                    js
+ *                    js-src
+ *                    js-tests
+ *                buildsys
+ *                configure
+ *                generators
+ *                jni
+ *                libs
+ *                ParentProjectNameTest
+ *                obj
+ *                readme_images
+ *                res
+ *                wikinotes
+ *
+ *
+ *  Buildscript layout:
+ *
+ *      Gralde-Android-Plugin 0.97 is still beta so have to over-ride lot
+ *      of tasks.  Breaking up build stuff into separate files to be applied
+ *      to amin script to attempt to keep it modular and maintable.
+ *
+ */
+ // loads wrapper task
+ apply from: 'wrapper.gradle'
+ // log ant output to kogging system
+ logging.captureStandardOutput LogLevel.INFO
+
+
+ // gradle-android-plugin will not load with apply from: file.gradle
+ // so we load it here
+ buildscript {
+	 repositories {
+	   mavenRepo(urls: 'http://jvoegele.com/maven2/')
+	 }
+	 dependencies {
+	   classpath 'com.jvoegele.gradle.plugins:android-plugin:0.9.7'
+	 }
+   }
+ apply plugin: 'android'
+
+
+
+ // we load loggingjvmtest here as it depends on the java pluging
+ // which is auto-loaded by the android plugin.
+ apply from: 'loggingjvmtest.gradle'
+
+ // sourceSets to recognize this layout:
+ //  ParentProject
+ //         src/
+ //         jvmtests/
+ //
+ sourceSets {
+	 main {
+		 java {
+			 srcDir 'src'
+		 }
+
+	 }
+	 test {
+		 java {
+			 srcDir 'jvmtests'
+		 }
+	 }
+
+ }
+
+ // to initilaize rest of Monon build stuff
+ buildscript {
+     repositories {
+		 mavenCentral()
+	 }
+
+	 configurations {
+
+	 }
+
+	 dependencies {
+
+	 }
+
+
+ }

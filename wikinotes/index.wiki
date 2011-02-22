@@ -2,6 +2,7 @@ Eclipse:/Monon/wikinotes/images/monon.png
 
 Monon Project:
 
+MononDesign
 ProjectSetUp
 IDESetUp
 ANTSetUp

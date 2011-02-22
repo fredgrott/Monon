@@ -1,0 +1,8 @@
+
+// We should not need to load any other gradle plugins here.
+// to supply gradle wrapper
+// gradle version 0.9.2
+task wrapper(type: Wrapper) {
+	gradleVersion = '0.9.2'
+	jarFile = 'wrapper/wrapper.jar'
+}
