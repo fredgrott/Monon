@@ -3,6 +3,11 @@
  *  Apache License 2.0, see:
  *  Copyright 2011
  *
+ *  IDE uses bin as output folder
+ *  and gradle build scripts use build that we do not
+ *  over step or interfere with the IDE or running
+ *  build scripts from the gradle gui or command line.
+ *
  *  Libraries/Frameworks Used:
  *    Java          MicroLog4Android
  *                  RoboGuice and Guice-no-aop
@@ -71,7 +76,7 @@
 	   mavenRepo(urls: 'http://jvoegele.com/maven2/')
 	 }
 	 dependencies {
-	   classpath 'com.jvoegele.gradle.plugins:android-plugin:0.9.7'
+	   classpath 'com.jvoegele.gradle.plugins:android-plugin:0.9.8'
 	 }
    }
  apply plugin: 'android'
@@ -103,18 +108,90 @@
  }
 
  // to initilaize rest of Monon build stuff
- buildscript {
+ // buildscript only allows certain items to
+ // do it bare here as far as initializing the
+ // rest of the Monon build system stuff
+
      repositories {
 		 mavenCentral()
+		 // antlibs
+		 flatDir name: 'localAntLibsRepository', dirs: 'buildsys/ant_task_libs'
+		 localAntLibsRepository {
+			 addArtifactPattern(file('buildsys/ant_task_libs').absolutePath + '[name]-[revision].jar')
+			 addArtifactPattern(file('buildsys/ant_task_libs').absolutePath + '[name].jar')
+		 }
+		 // jvmtests libs, make sure to define a copy to move
+		 // jvmtests libs from buildsys sub dir to
+		 // parent project libs folder for IDE support
+		 flatDir name: 'localJVMLibsRepository', dirs: 'buildsys/jvmtests_libs'
+		 localJVMLibsRepository {
+			 addArtifactPattern(file('buildsys/jvmtests_libs').absolutePath + '[name]-[revision].jar')
+		 }
+		 // dependency injection libs
+         flatDir name: 'localDILibsRepository', dirs: 'buildsys/di_libs'
+		 localDILibsRepository {
+			 addArtifactPattern(file('buildsys/di_libs').absolutePath + '[name]-[revision].jar')
+		 }
 	 }
 
 	 configurations {
-
+		 antlibs
+		 compile
+		 testCompile
 	 }
 
 	 dependencies {
 
+		 // testCompile need the
+		 // android.target.classpath as filetree
+		 // and we need to include libs/*jar s as
+		 // a filetree to both compile and testCompile
+		 // dependencies.
+
+		 // check gradle-android-plugin source for answer
+		 def ourAndroidTargetClasspath = ant.references['android.target.classpath'].list()
+
+
+
+		 // puts all 3rd party lib.jars in the libs dir
+		 // on the compile classpath
+		 compile fileTree(dir: 'libs', include: '*.jar')
+
+
+         antlibs(
+		  [group: 'antcontrib', name: 'ant-contrib', version: '1.0b3'],
+		  [group: 'zutubiandroid', name: 'zutubi-android-ant', version: '0.1.2'],
+          [group: 'doxygen', name: 'ant_doxygen'],
+          [group: 'pant', name: 'pant'],
+          [group: 'jyson', name: 'jython-standalone', version: '2.5.1'],
+          [group: 'pmd', name: 'pmd', version: '4.2.5'],
+          [group: 'junit', name: 'junit', version: '4.4'],
+          [group: 'jaxen', name: 'jaxen', version: '1.1.1'],
+          [group: 'asm', name: 'asm', version: '3.1'],
+          [group: 'jslint4java', name: 'jslint4java', version: '1.4.4'],
+          [group: 'javancss', name: 'javancss'],
+          [group: 'javancss', name: 'javancss2ant'],
+          [group: 'javancss', name: 'ccl'],
+          [group: 'javancss', name: 'javacc'],
+          [group: 'checkstyle', name: 'checkstyle-5.3-all'],
+          [group: 'classycle', name: 'classycle'],
+          [group: 'proguard', name: 'proguard'],
+          [group: 'yuicompressor', name: 'jargs', version: '1.0'],
+          [group: 'yuicompressor', name: 'rhino', version: '1.5R7'],
+          [group: 'yuicompressor', name: 'yuicompressor', version: '2.4.2'],
+          [group: 'yuicompressor', name: 'yui-compressor-ant-task', version: '0.5']
+         )
+         // hamcrest is in junit no dep jar
+		 testCompile(
+			 [group: 'com.pivotallabs', name: 'robolectric', version: '1.0-RC1-jar-with-dependencies'],
+			 [group: 'junit', name: 'junit', version: '4.8.2'],
+             [group: 'guice', name: 'guice-2.0-no_aop'],
+             [group: 'roboguice', name: 'roboguice', version: '1.1']
+
+	     )
+		 testCompile files(ourAndroidTargetClasspath)
+		 testCompile fileTree(dir: 'libs', include: '*.jar')
+		 testCompile files("$buildDir/classes")
 	 }
 
 
- }
