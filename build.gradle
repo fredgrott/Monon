@@ -356,6 +356,7 @@
 	 jdependXSLFile = new File(testReportDir, 'jdepend.xsl')
 	 // android.pro file reference
 	 androidPRO = new File(project.projectDir, 'android.pro')
+	 // need to more report images to proper places
 
 
 	 // Sets the package version
