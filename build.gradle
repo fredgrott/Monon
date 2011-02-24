@@ -73,10 +73,12 @@
  // so we load it here
  buildscript {
 	 repositories {
-	   mavenRepo(urls: 'http://jvoegele.com/maven2/')
+	   //mavenRepo(urls: 'http://jvoegele.com/maven2/')
+
 	 }
 	 dependencies {
-	   classpath 'com.jvoegele.gradle.plugins:android-plugin:0.9.8'
+	   //classpath 'com.jvoegele.gradle.plugins:android-plugin:0.9.8'
+	   classpath files('buildsys/gradle-android-plugin/android-plugin-0.9.8.jar')
 	 }
    }
  apply plugin: 'java'
@@ -114,7 +116,7 @@
  // rest of the Monon build system stuff
 
      repositories {
-		 mavenCentral()
+		 //mavenCentral()
 		 // antlibs
 		 flatDir name: 'localAntLibsRepository', dirs: 'buildsys/ant_task_libs'
 		 localAntLibsRepository {
