@@ -1,0 +1,2 @@
+-doclet 'org.umlgraph.markdown.doclet.UmlGraphDoc' -inferrel -inferdep -operations -hide value='java.*' -collpackages value="java.util.*' -qualify -postfixpackage -nodefontsize value='12' -nodefontpackagesize value='10'
+-docletpath '/home/fredgrott/workspaceE361Modelling-Spring/Monon/buildsys/doclets/MarkdownDoclet-3.0.jar'

@@ -79,6 +79,7 @@
 	   classpath 'com.jvoegele.gradle.plugins:android-plugin:0.9.8'
 	 }
    }
+ apply plugin: 'java'
  apply plugin: 'android'
 
 
@@ -176,10 +177,10 @@
           [group: 'checkstyle', name: 'checkstyle-5.3-all'],
           [group: 'classycle', name: 'classycle'],
           [group: 'proguard', name: 'proguard'],
-          [group: 'yuicompressor', name: 'jargs', version: '1.0'],
-          [group: 'yuicompressor', name: 'rhino', version: '1.5R7'],
-          [group: 'yuicompressor', name: 'yuicompressor', version: '2.4.2'],
-          [group: 'yuicompressor', name: 'yui-compressor-ant-task', version: '0.5']
+          [group: 'jargs', name: 'jargs', version: '1.0'],
+          [group: 'rhino', name: 'rhino', version: '1.6R7'],
+           [group: 'yuicompressor', name: 'yuicompressor', version: '2.4.2'],
+         [group: 'yuicompressor', name: 'yuicompressoranttask', version: '0.5']
          )
          // hamcrest is in junit no dep jar
 		 testCompile(
@@ -195,3 +196,424 @@
 	 }
 
 
+	 // Lets initialize some stuff
+	 //   [1] load the ant local.properties file
+	 ant.property(file:'local.properties')
+	 //   [2] load env variables
+	 ant.property(environment: "env")
+	 //   [3] define dstamp
+	 def dstamp = new Date().format('yyyyMMdd')
+	 //   [4] define javadoc formats
+	 def titleForDocumentation = project.name + ' ' + version
+	 def copyrightString = 'Copyright &#169; 2011  Mobilebytes.  All Rights Reserved.'
+	 //   [5] define codeqa report varaibles
+	 ant.property(name: 'today', value: dstamp)
+	 ant.property(name: 'project', value: project.name)
+	 ant.property(name: 'rulesets', value: 'android')
+
+     // note classpath even though in ANT it would be classpathref
+	 ant{
+		 taskdef(name: 'pmd', classname: 'net.sourceforge.pmd.ant.PMDTask',
+			 classpath: configurations.antlibs.asPath)
+		 taskdef(name: 'cpd', classname: 'net.sourceforge.pmd.cpd.CPDTask',
+			 classpath: configurations.antlibs.asPath)
+		 taskdef(resource: 'checkstyletask.properties',
+			 classpath: configurations.antlibs.asPath)
+		 taskdef(name: 'classycleReport', classname:'classycle.ant.ReportTask',
+			 classpath: configurations.antlibs.asPath)
+		 taskdef(name: 'javancss',
+			 classname:'javancss.JavancssAntTask',
+			 classpath: configurations.antlibs.asPath)
+		 taskdef(name: 'doxygen',
+			 classname:'org.doxygen.tools.DoxygenTask',
+			 classpath: configurations.antlibs.asPath)
+		 taskdef(resource: 'com/myarch/antjython/jython-antlib.xml',
+			 classpath: configurations.antlibs.asPath)
+		 taskdef(resource: 'com/zutubi/android/ant/antlib.xml',
+				 uri: 'antlib:com.zutubi.android.ant',
+				 classpath: configurations.antlibs.asPath)
+		 taskdef(resource: 'proguard/ant/task.properties',
+				classpath: configurations.antlibs.asPath)
+		 taskdef(name: 'yui-compressor',
+				 classname: 'net.noha.tools.ant.yuicompressor.tasks.YuiCompressorTask',
+				 classpath: configurations.antlibs.asPath)
+	 }
+
+	 //   [7] dir setup and vars
+	 // testResultsDir is *.xml codeqa dir
+	 // testReportDir is *.html codeqa dir
+	 // docsDir at root
+	 //  Project/
+	 //      bin/
+	 //      build/
+	 //           classes/
+	 //           testclasses/
+	 //           intermediate/
+	 //           reports
+	 //                 tests/
+	 //                    images/
+	 //           docs/
+	 //             javadocs/
+	 //                 resources/
+	 //           tmp
+	 //     libs/
+	 //     obj/
+	 //     jni/
+	 //     res/
+	 //        raw
+	 //      assets/
+	 //          www/
+	 //            css/
+	 //            css-src/
+	 //            js/
+	 //            js-src/
+	 //            js-tests/
+	 //
+	 //   assets: css-src, js-src, and js-tests are stripped
+	 //   out and replaced as blank files during
+	 //   packaging process for assets however project files
+	 //   left unchanged. IE always referencing css, js
+	 //   file pairs and system takes care of rest
+	 //   wether we have blank compressed files during
+	 //   denug and testing or have blank src css/js files
+	 //   during production packaging
+
+	 //build dir setup
+	 classesDir = new File(project.buildDir, 'classes')
+	 testClassesDir = new File(project.buildDir, 'testclasses')
+	 intermediateDir = new File(project.buildDir, 'intermediate')
+	 tmpDir = new File(project.buildDir, 'tmp')
+	 // native dirs
+	 jniDir = new File(project.projectDir, 'jni')
+	 objDir = new File(project.projectDir,'obj')
+	 // reports dirs
+	 reportsDirectory = new File(project.docsDir, 'reports')
+	 //  assumed by gradle testResultsDir = new File(project.reportsDirectory,'testresults')
+	 // assumed by gradle testReportDir = new File(project.reportsDirectory, 'testreport')
+	 testReportImagesDir = new File(project.testReportDir,'images')
+	 javadocDir = new File(project.docsDir,'javadoc')
+	 javadocResourcesDir = new File(project.javadocDir,'resources')
+     // assets dirs, we assume an assets dir
+	 // css, js are compressed file dirs
+	 wwwDir = new File(project.projectDir, 'assets/www')
+	 cssDir = new File(project.wwwDir, 'css')
+	 cssSrcDir = new File(project.wwwDir, 'css-src')
+	 jsDir = new File(project.wwwDir, 'js')
+	 jsSrcDir = new File(project.wwwDir, 'js-src')
+	 jsTestsDir = new File(project.wwwDir, 'js-tests')
+	 // res raw dir with res assumed
+	 // rs files need this for the native
+	 // generated bytecode
+	 rawDir = new File(project.projectDir, 'res/raw')
+	 //libs setup we just need the reference
+	 // gradle plugin assumed libsDir = new File(project.projectDir, 'libs')
+     // generate build dirs if not created yet
+	 if (!classesDir.isDirectory()) {
+		 classesDir.mkdirs()
+	 }
+	 if (!testClassesDir.isDirectory()) {
+		 testClassesDir.mkdirs()
+	 }
+	 if (!intermediateDir.isDirectory()) {
+		 intermediateDir.mkdirs()
+	 }
+	 // native dirs do not have to worry about most
+	 // IDE project creation creates them
+	 //  we just have set up the references
+	 // set up rest of report stuff
+	 if (!reportsDir.isDirectory()) {
+		 reportsDir.mkdirs()
+	 }
+	 if (!testReportImagesDir.isDirectory()) {
+		 testReportImagesDir.mkdirs()
+	 }
+	 if (!javadocDir.isDirectory()) {
+		 javadocDir.mkdirs()
+	 }
+	 if (!javadocResourcesDir.isDirectory()) {
+		 javadocResourcesDir.mkdirs()
+	 }
+	 // assets setup no need
+	 // res raw setup
+	 if (!rawDir.isDirectory()) {
+		 rawDir.mkdirs()
+	 }
+	 // setup code report file references
+	 pmdXMLFile = new File(testResultsDir, 'pmd.xml')
+	 checkstyleXMLFile = new File(testResultsDir, 'checkstyle.xml')
+	 classycleXMLFile = new File(testResultsDir, 'classycle.xml')
+	 jdependXMLFile = new File(testResultsDir, 'jdepend.xml')
+	 javancssXMLFile = new File(testResultsDir, 'javancss.xml')
+	 pmdHTMLFile = new File(testReportDir, 'pmd.html')
+	 checkstyleHTMLFile = new File(testReportDir, 'checkstyle.html')
+	 classycleHTMLFile = new File(testReportDir, 'classycle.html')
+	 jdependHTMLFile = new File(testReportDir, 'jdepend.html')
+	 javancssHTMLFile = new File(testReportDir, 'javancss.html')
+	 pmdXSLFile = new File(testReportDir, 'pmd.xsl')
+	 checkstyleXSLFile = new File(testReportDir, 'checkstyle.xsl')
+	 classycleXSLFile = new File(testReportDir, 'classycle.xsl')
+	 javancssXSLFIle = new File(testReportDir, 'javancss.xsl')
+	 jdependXSLFile = new File(testReportDir, 'jdepend.xsl')
+	 // android.pro file reference
+	 androidPRO = new File(project.projectDir, 'android.pro')
+
+
+	 // Sets the package version
+	 version = ant['product.version']
+
+	 // Signing configuration, valid for all builds (1)
+	 // ant properties subsititution from local.properties
+	 androidPackage {
+		 keyStore = ant['key.store']
+		 keyAlias = ant['key.alias']
+		 keyStorePassword = ant['key.store.password']
+		 keyAliasPassword = ant['key.alias.password']
+	 }
+
+	 // Configure the filtering of resources with properties
+	 // from the Gradle's project scope (2)
+	 processResources {
+		 expand (project.properties)
+	 }
+
+	 // Configure a dedicated debug build (3)
+	 task configureDebug << {
+		 description = 'configure a dedicated debug build'
+		 jar.classifier = "debug"
+	 }
+	 // we wire in doLast to excute assemble
+	 // task and thus only have to do:
+	 //  gradle configDebugAssemble rather than
+	 //  gradle configureDebug assemble
+	 // as we should assume that developer using
+	 // IDE is either doing this in console or
+	 // launching gradle --gui first in console
+	 // to bring up the Gradle GUI console
+	 task configDebugAssemble << {
+		 description = 'configure a dedicated debug build'
+		 jar.classifier = "debug"
+	 }
+	 configDebugAssemble.doLast {
+		 assemble.execute()
+	 }
+
+	 // Configure a dedicated release build (4)
+	 task configureRelease << {
+		 description = 'configure a dedicated release build'
+		 // Proguard:
+		 //    The Gradle Android Plugin Proguard task
+		 //    is not exactly configurable as it instead
+		 //    attempts to embed the configurations
+		 //    in-line rather than point to a
+		 //    XML configuration file
+		 //
+		 proguard.enabled = true
+	 }
+
+	 task configureJVMTesting << {
+
+	 }
+
+	 task configureDalvikTesting << {
+
+	 }
+
+	 // need to instert this task after
+	 // gradle android plugin modfies
+	 // version in android manifest
+	 task androidVersion << {
+		 ant.bumpversion(bumpname: 'true')
+	 }
+
+
+
+
+
+	 // to enble a doclet we use the javadoc.options file
+	 // to specify the doclet options
+	 javadoc.configure {
+		 classpath = project.sourceSets.main.compileClasspath
+		 destinationDir = docsDir
+		 source = project.sourceSets.main.allJava
+		 title = project.apiDocTitle
+		 options.overview('overview.html')
+		 options.showAll()
+		 options.encoding('UTF-8')
+		 options.setUse(true)
+		 options.author(true)
+		 options.version(true)
+		 options.windowTitle(titleForDocumentation)
+		 options.docTitle(titleForDocumentation)
+		 options.footer(copyrightString)
+		 options.optionFiles << file('javadoc.options')
+	 }
+	 javadoc.doFirst {
+		 javadoc.title = titleForDocumentation
+		 javadoc.options.docTitle = javadoc.title
+	 }
+
+
+
+	 compileJava.configure {
+		 source = sourceSets.main.java
+		 destinationDir = new File('build/classes')
+		 sourceCompatibility = 1.6
+		 targetCompatibility = 1.6
+	 }
+
+
+	 compileTestJava.configure {
+		 source = sourceSets.test.java
+		 destinationDir = new File('build/testclasses')
+		 sourceCompatibility = 1.6
+		 targetCompatibility = 1.6
+
+		 options.deprecation = true
+
+		 options.debug = true
+	 }
+
+
+	 test.configure {
+
+		 testSrcDir ='jvmtests'
+
+		 testReport = true
+		 scanforTestClasses = true
+		 include("**/*Tests.class", "**/*Test.class")
+	 }
+
+	 // replace proguard task
+	 // task proguard(type: Task)
+
+	 task proguard(overwrite: true) << {
+		 if(proguard.enabled == true) {
+			// Proguard 4.5.x seems to
+			// be different than Proguard 4.4
+			// but not by much
+
+			// [1] setup out files
+			//AndroidPluginConvention androidConvention = project.convention.plugins.android
+			String outFilePath = new File(project.libsDir, ant.references['project.name'] + "-unproguarded.jar")
+
+			androidPRO = new File(project.projectDir, android.pro)
+			// default under Proguard 4.5.x:
+			//   dontskipnonpubliclibraryclasses
+			//   obfuscate
+			//
+
+
+			// I set these this way:
+			//   overloadaggressively false(Dalvik cannot handle overloaded
+			//                              static fields)
+			//   dontpreverify   true(preverification is optional
+			//                         under Java 6.0 and only applies to JVMs
+			//   verbose true(same as warn under Proguard 4.4)
+			//
+			// certain commands
+			// such as dump have to be in progurad.pro
+			// config because otherwise they conflict
+			// with groovy commands..
+			// for example dump
+			ant.proguard() {
+				include(file: androidPRO)
+				// as long as libs jars on
+				// compile path this will work
+				// as jar task will pick up the
+				// libs jars and jar' it.
+				injar(path: project.jar.archivePath)
+				outjar(file: ourFilePath)
+				// 0.9.7 missing android map jars
+				libraryjar(file: ant.references['android.target.classpath'].asFileTree)
+
+				// print deadcode
+				printusage
+				// print mapping
+				printmapping
+			}
+
+
+		 }
+	 }
+
+
+	 task checkQA << {
+		 ant {
+
+
+			 pmd(shortFilenames:'true', failonruleviolation:'false', rulesetfiles:'configure/pmd/androidpmdruleset.xml') {
+				 auxclasspath {
+					 path(refid: ant.references['android.target.classpath'])
+					 pathelement(location: classesDir)
+					 fileset(dir: 'libs'){
+						 include(name: '*.jar')
+					 }
+				 }
+				 formatter(type:'xml', toFile: pmdXMLFile, toConsole:'true')
+				 fileset(dir: "src") {
+					 include(name: '**/*.java')
+				 }
+			 }
+			 xslt(in: pmdXMLFile,
+				 style: pmdXSLFile,
+				 out: pmdHTMLFile) {
+					param(name: 'project', expression: ant.properties['project'])
+					param(name: 'today', expression: ant.properties['today'])
+					param(name: 'rulesets', expression: ant.properties['rulesets'])
+					mapper(type: 'glob', from: 'pmd.xml', to: 'pmd.html')
+				 }
+
+			 checkstyle(config: 'configure/checkstyle/androidcheckstylerules.xml',
+						  failProperty: 'checkstyle.failure',
+						  failOnViolation: 'false') {
+						  formatter(type:'xml',
+							  toFile:checkstyleXMLFile, toConsole:'true')
+						  filset(dir: "src") {
+							 include(name: '**/*.java')
+						  }
+						  classpath(refid: configurations.antlibs.asPath)
+			 }
+			 xslt(in: checkstyleXMLFile,
+				 style: checkstyleXSLFile,
+				 out: checkstyleHTMLFile)  {
+				 param(name: 'today', expression: ant.references['today'])
+				 mapper(type: 'glob', from: 'checkstyle.xml', to: 'checkstyle.html')
+				 }
+			 classcyleReport(reportfile: classycleXMLFile,
+							  title: project.name){
+							  formatter(type:'xml',
+								  toFile:classycleXMLFile, toConsole:'true')
+							  filset(dir: classesDir) {
+								  include(name: '**/*.class')
+							   }
+							  }
+
+
+		 xslt(in: classycleXMLFile,
+			 style: classycleXSLFile,
+			 out: classycleHTMLFile) {
+			   param(name: 'date', expression: ant.propteries['today'])
+			   param(name: 'title', expression: project.name)
+			   mapper(type: 'glob', from: 'classycle.xml', to: 'classycle.html')
+			 }
+
+		 javancss(srcdir:'src', abortOnFail:'true', generateReport:'true')
+			 xslt(in: javancssXMLFile,
+				 style: javancssXSLFile,
+				 out: javancssHTMLFile)
+
+
+		 jdepend(format: 'xml', outputfile: jdependXMLFile) {
+				 exclude(name: 'java.*')
+				 exclude(name: 'javax.*')
+				 classespath {
+				  pathelement(location: 'build/classes')
+				 }
+				 classpath(location: 'build/classes')
+			   }
+		 xslt(in: jdependXMLFile,
+			 style: jdependXSLFile,
+			 out: jdependHTMLFile)
+		 }
+	 }
+	 check.dependsOn = [checkQA]
